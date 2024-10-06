@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Exoplanet Educational App</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+        canvas {
+            display: block;
+        }
+        #sidebar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 200px;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+        #sidebar h2 {
+            margin: 0;
+            font-size: 20px;
+            text-align: center;
+        }
+        #sidebar button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #444;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        #sidebar button:hover {
+            background-color: #555;
+        }
+        #infoPanel {
+            position: absolute;
+            top: 20px;
+            left: 220px;
+            width: calc(100% - 240px);
+            max-width: 600px;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            display: none; /* Hidden by default */
+            color: white;
+        }
+        #infoPanel h3 {
+            margin: 0;
+        }
+        #infoPanel button {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <h2>Exoplanets</h2>
+        <button onclick="showInfo('Proxima Centauri b')">Proxima Centauri b</button>
+        <button onclick="showInfo('TRAPPIST-1e')">TRAPPIST-1e</button>
+        <button onclick="showInfo('Kepler-186f')">Kepler-186f</button>
+        <button onclick="showInfo('LHS 1140 b')">LHS 1140 b</button>
+        <button onclick="showInfo('HD 209458 b')">HD 209458 b</button>
+        <button onclick="showInfo('WASP-121b')">WASP-121b</button>
+        <button onclick="showInfo('K2-18b')">K2-18b</button>
+        <button onclick="showInfo('WASP-43b')">WASP-43b</button>
+        <button onclick="showInfo('GJ 357 d')">GJ 357 d</button>
+        <button onclick="showInfo('55 Cancri e')">55 Cancri e</button>
+        <button onclick="showInfo('KELT-9b')">KELT-9b</button>
+        <button onclick="showInfo('HD 189733 b')">HD 189733 b</button>
+        <button onclick="showInfo('WASP-17b')">WASP-17b</button>
+        <button onclick="showInfo('WASP-39b')">WASP-39b</button>
+    </div>
+    <div id="infoPanel">
+        <h3 id="exoplanetName"></h3>
+        <p id="exoplanetDescription"></p>
+        <button onclick="closeInfo()">Close</button>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Array of exoplanets with detailed descriptions and positions
+        const exoplanets = [
+            { name: "Proxima Centauri b", description: "The closest known exoplanet to the Sun, located 4.24 light years away. It is roughly 1.17 times the mass of Earth and orbits within the habitable zone of its star, Proxima Centauri.", position: new THREE.Vector3(-50, -50, -100) },
+            { name: "TRAPPIST-1e", description: "An Earth-sized exoplanet in the habitable zone of the TRAPPIST-1 system. It has a radius 0.91 times that of Earth and is about 40 light years away.", position: new THREE.Vector3(100, 100, -200) },
+            { name: "Kepler-186f", description: "First Earth-sized exoplanet found in the habitable zone of another star, located 500 light years away. Its radius is about 1.1 times that of Earth.", position: new THREE.Vector3(150, -50, -150) },
+            { name: "LHS 1140 b", description: "A super-Earth exoplanet located 40 light years away, it is 1.4 times the size of Earth and orbits its star in the habitable zone.", position: new THREE.Vector3(-100, 50, -200) },
+            { name: "HD 209458 b", description: "A 'hot Jupiter' exoplanet known for its transiting nature, discovered in 1999. It orbits very close to its star and is located 159 light years away.", position: new THREE.Vector3(0, 150, -50) },
+            { name: "WASP-121b", description: "A highly inflated 'hot Jupiter' exoplanet. It has a mass 1.2 times that of Jupiter and is located 850 light years away.", position: new THREE.Vector3(50, 0, -250) },
+            { name: "K2-18b", description: "An exoplanet that has water vapor in its atmosphere, located about 124 light years away. It is a super-Earth with a radius 2.6 times that of Earth.", position: new THREE.Vector3(-150, 75, -150) },
+            { name: "WASP-43b", description: "A hot Jupiter that orbits very close to its star, located 260 light years away. Its atmosphere is being studied for its unique properties.", position: new THREE.Vector3(25, -125, -100) },
+            { name: "GJ 357 d", description: "An exoplanet in the habitable zone of its star, located 31 light years away. It is about 1.6 times the mass of Earth.", position: new THREE.Vector3(75, 50, -250) },
+            { name: "55 Cancri e", description: "A super-Earth with extreme conditions, located 41 light years away. It is believed to be a carbon-rich planet.", position: new THREE.Vector3(-75, -100, -200) },
+            { name: "KELT-9b", description: "One of the hottest known exoplanets, located 670 light years away. It is a gas giant with a temperature over 4000 K.", position: new THREE.Vector3(50, 100, -300) },
+            { name: "HD 189733 b", description: "Known for its strong winds and extreme weather, this exoplanet is located 64 light years away and is a gas giant.", position: new THREE.Vector3(0, -150, -200) },
+            { name: "WASP-17b", description: "One of the largest exoplanets with low density, located 1,000 light years away. It is about half the density of water.", position: new THREE.Vector3(-50, 50, -300) },
+            { name: "WASP-39b", description: "A 'mini-Neptune' studied for its atmosphere, located about 350 light years away. It has a mass 0.28 times that of Jupiter.", position: new THREE.Vector3(100, -100, -150) }
+        ];
+
+        // Create stars
+        const starsGeometry = new THREE.BufferGeometry();
+        const starCount = 1000;
+        const positionArray = new Float32Array(starCount * 3); 
+
+        for (let i = 0; i < starCount; i++) {
+            const x = (Math.random() - 0.5) * 2000; 
+            const y = (Math.random() - 0.5) * 2000; 
+            const z = (Math.random() - 0.5) * 2000; 
+            positionArray.set([x, y, z], i * 3);
+        }
+
+        starsGeometry.setAttribute('position', new THREE.BufferAttribute(positionArray, 3));
+        const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 2 });
+        const stars = new THREE.Points(starsGeometry, starsMaterial);
+
+        // Add stars to the scene
+        scene.add(stars);
+
+        // Create a sphere to represent the selected exoplanet
+        const planetMarkerGeometry = new THREE.SphereGeometry(5, 32, 32);
+        const planetMarkerMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        const planetMarker = new THREE.Mesh(planetMarkerGeometry, planetMarkerMaterial);
+        scene.add(planetMarker);
+        planetMarker.visible = false; // Hide by default
+
+        // Show information for selected exoplanet
+        function showInfo(exoplanetName) {
+            const exoplanet = exoplanets.find(e => e.name === exoplanetName);
+            document.getElementById('exoplanetName').innerText = exoplanet.name;
+            document.getElementById('exoplanetDescription').innerText = exoplanet.description;
+            document.getElementById('infoPanel').style.display = 'block'; // Show the panel
+
+            // Move the marker to the exoplanet's position
+            planetMarker.position.copy(exoplanet.position);
+            planetMarker.visible = true; // Show the marker
+        }
+
+        // Close information panel
+        function closeInfo() {
+            document.getElementById('infoPanel').style.display = 'none'; // Hide the panel
+            planetMarker.visible = false; // Hide the marker
+        }
+
+        // Camera position
+        camera.position.z = 300;
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            stars.rotation.x += 0.001; 
+            stars.rotation.y += 0.001;
+            renderer.render(scene, camera);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start animation
+        animate();
+    </script>
+</body>
+</html>
